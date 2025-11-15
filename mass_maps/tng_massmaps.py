@@ -298,7 +298,7 @@ if __name__ == "__main__":
         azims=azims,
         img_size_kpc=60.0,   # widen if galaxy is large
         npix=512,
-        outdir="./massmaps",
+        outdir="/u/mhuertas/data/hsc",
         tag="TNG100-1",
         recentre_on_com=True,
     )
