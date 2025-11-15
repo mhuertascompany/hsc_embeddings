@@ -196,10 +196,14 @@ def stellar_mass_map(
     azim_deg: float,
     *,
     img_size_kpc: float = 50.0,
-    npix: int = 512,
+    npix: int | None = None,
+    pixscale_kpc: float = 0.1,
     recentre_on_com: bool = True,
 ) -> Tuple[np.ndarray, float]:
     """Compute a stellar mass surface density map for a given subhalo and view.
+
+    If `npix` is not supplied, the map resolution will be set by `pixscale_kpc`
+    (default 0.1 kpc = 100 pc) and rounded to the nearest integer pixel count.
 
     Returns (map, pixscale_kpc).
     """
@@ -225,6 +229,14 @@ def stellar_mass_map(
     xy = pts_rot[:, :2]
 
     # Accumulate into 2D surface density map
+    if npix is None:
+        if pixscale_kpc <= 0:
+            raise ValueError("pixscale_kpc must be > 0 when npix is not provided.")
+        npix = int(np.round(img_size_kpc / pixscale_kpc))
+        npix = max(1, npix)
+    else:
+        pixscale_kpc = img_size_kpc / npix
+
     sig, pixscale = _hist2d_mass(xy, m_Msun, img_size_kpc=img_size_kpc, npix=npix)
     return sig, pixscale
 
@@ -290,7 +302,8 @@ def run_batch(
     azims: Sequence[float] = (0.0, 120.0, -120.0, 0.0),
     *,
     img_size_kpc: float = 50.0,
-    npix: int = 512,
+    npix: int | None = None,
+    pixscale_kpc: float = 0.1,
     outdir: str = "./massmaps",
     tag: str = "TNG",
     recentre_on_com: bool = True,
@@ -304,7 +317,8 @@ def run_batch(
     for cam, inc, az in zip(cams, incls, azims):
         sig, pix = stellar_mass_map(
             base_path, snapnum, subhalo_id, inc, az,
-            img_size_kpc=img_size_kpc, npix=npix, recentre_on_com=recentre_on_com,
+            img_size_kpc=img_size_kpc, npix=npix, pixscale_kpc=pixscale_kpc,
+            recentre_on_com=recentre_on_com,
         )
         outbase = os.path.join(outdir, f"{tag}_snap{snapnum:03d}_sub{subhalo_id:06d}_{cam}")
         fits_path, png_path = save_fits_and_png(sig, pix, outbase)
@@ -318,13 +332,13 @@ def run_batch(
 # ------------------------------
 if __name__ == "__main__":
     # Example configuration — EDIT to your environment
-    BASE = "/virgotng/universe/IllustrisTNG/TNG100-1/output"   # or TNG50-1, TNG300-1, etc.
+    BASE = "/virgotng/universe/IllustrisTNG/TNG50-1/output"   # or TNG50-1, TNG300-1, etc.
     SNAP = 91                     # e.g. z ~ 0 snapshot, adjust as needed
-    SUBID = 399122                # the SubhaloID of the galaxy of interest
+    SUBID = 622668                # the SubhaloID of the galaxy of interest
 
     cams = np.array(['v2'])
     incls = [109.5]
-    azims = [-120.0]
+    azims = [120.0]
 
     run_batch(
         base_path=BASE,
@@ -333,9 +347,9 @@ if __name__ == "__main__":
         cams=cams,
         incls=incls,
         azims=azims,
-        img_size_kpc=60.0,   # widen if galaxy is large
-        npix=512,
+        img_size_kpc=113,   # widen if galaxy is large
+        pixscale_kpc=0.1,    # 100 pc pixels
         outdir="/u/mhuertas/data/hsc",
-        tag="TNG100-1",
+        tag="TNG50-1",
         recentre_on_com=True,
     )
