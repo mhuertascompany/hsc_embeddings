@@ -75,7 +75,7 @@ def _load_stars(base_path: str, snapnum: int, subhalo_id: int):
         ) from exc
 
     # Use SNAPSHOT header (goes through snapdir_XXX)
-    hdr = il_snap.loadHeader(base_path, snapnum)
+    hdr = il_group.loadHeader(base_path, snapnum)
     z = hdr["Redshift"]
     h = hdr["HubbleParam"]
 
