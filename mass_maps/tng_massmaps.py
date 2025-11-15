@@ -319,12 +319,12 @@ def run_batch(
 if __name__ == "__main__":
     # Example configuration — EDIT to your environment
     BASE = "/virgotng/universe/IllustrisTNG/TNG100-1/output"   # or TNG50-1, TNG300-1, etc.
-    SNAP = 99                     # e.g. z ~ 0 snapshot, adjust as needed
-    SUBID = 123456                # the SubhaloID of the galaxy of interest
+    SNAP = 91                     # e.g. z ~ 0 snapshot, adjust as needed
+    SUBID = 399122                # the SubhaloID of the galaxy of interest
 
-    cams = np.array(['v0','v1','v2','v3'])
-    incls = [109.5, 109.5, 109.5, 0.0]
-    azims = [0.0, 120.0, -120.0, 0.0]
+    cams = np.array(['v2'])
+    incls = [109.5]
+    azims = [-120.0]
 
     run_batch(
         base_path=BASE,
