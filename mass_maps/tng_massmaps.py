@@ -66,11 +66,21 @@ def _load_stars(base_path: str, snapnum: int, subhalo_id: int):
     h : float
         Hubble parameter (h)
     """
+
+    try:
+        subhalo_id = int(subhalo_id)
+    except Exception as exc:
+        raise TypeError(f"subhalo_id must be an integer; got {type(subhalo_id)} with value {subhalo_id!r}") from exc
     hdr = il_group.loadHeader(base_path, snapnum)
     z = hdr["Redshift"]
     h = hdr["HubbleParam"]
 
     subtab = il_group.loadSubhalos(base_path, snapnum, fields=["SubhaloPos"])  # ckpc/h
+    nsub = len(subtab["SubhaloPos"]) if subtab is not None and "SubhaloPos" in subtab else 0
+    if not nsub:
+        raise RuntimeError(f"No subhalo table found at {base_path}, snap {snapnum}.")
+    if subhalo_id < 0 or subhalo_id >= nsub:
+        raise IndexError(f"subhalo_id {subhalo_id} out of range [0, {nsub-1}] for snap {snapnum}.")
     subpos_ckpch = subtab["SubhaloPos"][subhalo_id]
 
     fields = ["Coordinates", "Masses", "GFM_StellarFormationTime"]
