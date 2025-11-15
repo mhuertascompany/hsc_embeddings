@@ -66,36 +66,53 @@ def _load_stars(base_path: str, snapnum: int, subhalo_id: int):
     h : float
         Hubble parameter (h)
     """
-
+    # Make sure subhalo_id is an int
     try:
         subhalo_id = int(subhalo_id)
     except Exception as exc:
-        raise TypeError(f"subhalo_id must be an integer; got {type(subhalo_id)} with value {subhalo_id!r}") from exc
-    hdr = il_group.loadHeader(base_path, snapnum)
+        raise TypeError(
+            f"subhalo_id must be an integer; got {type(subhalo_id)} with value {subhalo_id!r}"
+        ) from exc
+
+    # Use SNAPSHOT header (goes through snapdir_XXX)
+    hdr = il_snap.loadHeader(base_path, snapnum)
     z = hdr["Redshift"]
     h = hdr["HubbleParam"]
 
+    # Load subhalo positions from group catalog
     subtab = il_group.loadSubhalos(base_path, snapnum, fields=["SubhaloPos"])  # ckpc/h
-    nsub = len(subtab["SubhaloPos"]) if subtab is not None and "SubhaloPos" in subtab else 0
-    if not nsub:
+    if subtab is None or "SubhaloPos" not in subtab:
         raise RuntimeError(f"No subhalo table found at {base_path}, snap {snapnum}.")
+    nsub = len(subtab["SubhaloPos"])
     if subhalo_id < 0 or subhalo_id >= nsub:
-        raise IndexError(f"subhalo_id {subhalo_id} out of range [0, {nsub-1}] for snap {snapnum}.")
+        raise IndexError(
+            f"subhalo_id {subhalo_id} out of range [0, {nsub-1}] for snap {snapnum}."
+        )
+
     subpos_ckpch = subtab["SubhaloPos"][subhalo_id]
 
+    # Load stellar particles for this subhalo
     fields = ["Coordinates", "Masses", "GFM_StellarFormationTime"]
     star = il_snap.loadSubhalo(base_path, snapnum, subhalo_id, partType=4, fields=fields)
+    if star is None or len(star.get("Coordinates", [])) == 0:
+        raise RuntimeError(
+            f"No stellar particles found for subhalo {subhalo_id} at snap {snapnum}. "
+            "Check that the subhalo contains stars or verify the ID/snapshot."
+        )
+
     coords = star["Coordinates"]  # ckpc/h
     mass = star["Masses"]         # 1e10 Msun/h
 
-    # Filter out wind or non-stellar particles if necessary (formation time > 0 for stars)
+    # Keep only true stars (formation time > 0)
     if "GFM_StellarFormationTime" in star:
         form = star["GFM_StellarFormationTime"]
         mask = form > 0
-        coords = coords[mask]
-        mass = mass[mask]
+        if mask.any():
+            coords = coords[mask]
+            mass = mass[mask]
 
     return coords, mass, subpos_ckpch, z, h
+
 
 
 def _ckpch_to_phys_kpc(x_ckpch: np.ndarray, z: float, h: float) -> np.ndarray:
