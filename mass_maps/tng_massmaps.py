@@ -281,7 +281,7 @@ def run_batch(
 # ------------------------------
 if __name__ == "__main__":
     # Example configuration — EDIT to your environment
-    BASE = "/virgotng/universe/IllustrisTNG/TNG100-1"   # or TNG50-1, TNG300-1, etc.
+    BASE = "/virgotng/universe/IllustrisTNG/TNG100-1/output"   # or TNG50-1, TNG300-1, etc.
     SNAP = 99                     # e.g. z ~ 0 snapshot, adjust as needed
     SUBID = 123456                # the SubhaloID of the galaxy of interest
 
