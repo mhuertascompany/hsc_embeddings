@@ -81,15 +81,25 @@ def _load_stars(base_path: str, snapnum: int, subhalo_id: int):
 
     # Load subhalo positions from group catalog
     subtab = il_group.loadSubhalos(base_path, snapnum, fields=["SubhaloPos"])  # ckpc/h
-    if subtab is None or "SubhaloPos" not in subtab:
+    if subtab is None:
         raise RuntimeError(f"No subhalo table found at {base_path}, snap {snapnum}.")
-    nsub = len(subtab["SubhaloPos"])
+
+    # illustris_python returns a dict when requesting >1 field, but for a single
+    # field it returns the ndarray directly. Handle both cases here.
+    if isinstance(subtab, dict):
+        if "SubhaloPos" not in subtab:
+            raise RuntimeError(f"No SubhaloPos field in catalog at {base_path}, snap {snapnum}.")
+        subpos_all = subtab["SubhaloPos"]
+    else:
+        subpos_all = subtab
+
+    nsub = len(subpos_all)
     if subhalo_id < 0 or subhalo_id >= nsub:
         raise IndexError(
             f"subhalo_id {subhalo_id} out of range [0, {nsub-1}] for snap {snapnum}."
         )
 
-    subpos_ckpch = subtab["SubhaloPos"][subhalo_id]
+    subpos_ckpch = subpos_all[subhalo_id]
 
     # Load stellar particles for this subhalo
     fields = ["Coordinates", "Masses", "GFM_StellarFormationTime"]
